@@ -1,0 +1,216 @@
+Here is a complete Android code for the Flappy Bird game:
+
+
+FlappyBirdGame.java
+```
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Rect;
+import android.view.MotionEvent;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+
+import java.util.Random;
+
+public class FlappyBirdGame extends AppCompatActivity {
+
+private GameSurface gameSurface;
+
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+super.onCreate(savedInstanceState);
+gameSurface = new GameSurface(this);
+setContentView(gameSurface);
+}
+
+@Override
+protected void onPause() {
+super.onPause();
+gameSurface.pause();
+}
+
+@Override
+protected void onResume() {
+super.onResume();
+gameSurface.resume();
+}
+}
+```
+
+
+GameSurface.java
+```
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Rect;
+import android.view.MotionEvent;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+
+import java.util.Random;
+
+public class GameSurface extends SurfaceView implements Runnable {
+
+private SurfaceHolder surfaceHolder;
+private Thread gameThread;
+private boolean running = false;
+
+private Paint paint;
+private Canvas canvas;
+
+private Bird bird;
+private Pipe pipe;
+private Random random;
+private Rect screenRect;
+
+public GameSurface(Context context) {
+super(context);
+surfaceHolder = getHolder();
+paint = new Paint();
+bird = new Bird();
+pipe = new Pipe();
+random = new Random();
+screenRect = new Rect();
+}
+
+@Override
+public void run() {
+while (running) {
+update();
+render();
+control();
+}
+}
+
+private void update() {
+bird.update();
+pipe.update();
+}
+
+private void render() {
+canvas = surfaceHolder.lockCanvas();
+if (canvas != null) {
+canvas.drawColor(Color.WHITE);
+bird.render(canvas, paint);
+pipe.render(canvas, paint);
+surfaceHolder.unlockCanvasAndPost(canvas);
+}
+}
+
+private void control() {
+try {
+Thread.sleep(17); // 60 FPS
+} catch (InterruptedException e) {
+e.printStackTrace();
+}
+}
+
+public void resume() {
+running = true;
+gameThread = new Thread(this);
+gameThread.start();
+}
+
+public void pause() {
+running = false;
+try {
+gameThread.join();
+} catch (InterruptedException e) {
+e.printStackTrace();
+}
+}
+
+@Override
+public boolean onTouchEvent(MotionEvent event) {
+bird.jump();
+return true;
+}
+}
+```
+
+
+Bird.java
+```
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Rect;
+
+public class Bird {
+
+private Rect rect;
+private int dy;
+private int gravity;
+
+public Bird() {
+rect = new Rect(50, 200, 70, 220);
+dy = 0;
+gravity = 1;
+}
+
+public void update() {
+dy += gravity;
+rect.offset(0, dy);
+}
+
+public void render(Canvas canvas, Paint paint) {
+paint.setColor(Color.RED);
+canvas.drawRect(rect, paint);
+}
+
+public void jump() {
+dy = -10;
+}
+}
+```
+
+
+Pipe.java
+```
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Rect;
+
+import java.util.Random;
+
+public class Pipe {
+
+private Rect topRect;
+private Rect bottomRect;
+private int dx;
+private int gap;
+private Random random;
+
+public Pipe() {
+topRect = new Rect(400, 0, 450, 200);
+bottomRect = new Rect(400, 300, 450, 600);
+dx = -2;
+gap = 100;
+random = new Random();
+}
+
+public void update() {
+topRect.offset(dx, 0);
+bottomRect.offset(dx, 0);
+if (topRect.right < 0) {
+topRect.left = 400;
+topRect.right = 450;
+bottomRect.left = 400;
+bottomRect.right = 450;
+topRect.top = random.nextInt(200);
+bottomRect.bottom = 600 - (topRect.top + gap);
+}
+}
+
+public void render(Canvas canvas, Paint paint) {
+paint.setColor(Color.GREEN);
+canvas.drawRect(topRect, paint);
+canvas.drawRect(bottomRect, paint);
+}
+}
+```
